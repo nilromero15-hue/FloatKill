@@ -267,17 +267,19 @@ class FloatingButtonService : Service() {
     // region — actions
 
     private fun onBubbleClicked() {
-        val target = currentTargetPackage() ?: return
-        val killer = strategy ?: run {
-            toast(getString(R.string.no_kill_permission))
-            return
-        }
-        val ok = killer.killAndRelaunch(target)
-        if (!ok) {
-            val reason = killer.lastError ?: target
-            toast(getString(R.string.kill_failed_detail, target, reason))
+    val service = ForegroundDetectorService.instance()
+
+    if (service == null) {
+        toast("Accessibility service unavailable")
+        return
+    }
+
+    service.performGuildWarsEmergencyLogout { success ->
+        if (!success) {
+            toast("Guild Wars emergency logout failed")
         }
     }
+}
 
     private fun showContextMenu(anchor: View) {
         // Anchor is on an overlay window, so PopupMenu can't anchor there directly;
