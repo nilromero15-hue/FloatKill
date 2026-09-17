@@ -81,36 +81,51 @@ class ForegroundDetectorService : AccessibilityService() {
     }
 
     override fun onInterrupt() { /* no long work to abort */ }
-    
-fun performGuildWarsEmergencyLogout(callback: (Boolean) -> Unit) {
-    // Coordinates calibrated for Nil's 1536x960 Guild Wars layout.
-    // Sequence:
-    // 1. Open main menu
-    // 2. Tap Log Out
-    // 3. Tap Character Select
+  fun performGuildWarsEmergencyLogout(callback: (Boolean) -> Unit) {
+    val metrics = resources.displayMetrics
+    val width = metrics.widthPixels.toFloat()
+    val height = metrics.heightPixels.toFloat()
 
-    performTap(242f, 52f) { first ->
+    // Positions measured from Guild Wars at 1536x960,
+    // converted to relative screen coordinates.
+    val menuX = width * (242f / 1536f)
+    val menuY = height * (52f / 960f)
+
+    val logoutX = width * (360f / 1536f)
+    val logoutY = height * (464f / 960f)
+
+    val characterX = width * (770f / 1536f)
+    val characterY = height * (473f / 960f)
+
+    Log.i(
+        TAG,
+        "GW logout display=${width}x${height}, " +
+            "menu=($menuX,$menuY), logout=($logoutX,$logoutY), " +
+            "character=($characterX,$characterY)"
+    )
+
+    performTap(menuX, menuY) { first ->
         if (!first) {
             callback(false)
             return@performTap
         }
 
         handler.postDelayed({
-            performTap(360f, 464f) { second ->
+            performTap(logoutX, logoutY) { second ->
                 if (!second) {
                     callback(false)
                     return@performTap
                 }
 
                 handler.postDelayed({
-                    performTap(770f, 473f) { third ->
+                    performTap(characterX, characterY) { third ->
                         callback(third)
                     }
-                }, 250L)
+                }, 350L)
             }
-        }, 250L)
+        }, 350L)
     }
-}
+}  
 
 private fun performTap(
     x: Float,
