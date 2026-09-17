@@ -81,7 +81,81 @@ class ForegroundDetectorService : AccessibilityService() {
     }
 
     override fun onInterrupt() { /* no long work to abort */ }
+    
+fun performGuildWarsEmergencyLogout(callback: (Boolean) -> Unit) {
+    // Coordinates calibrated for Nil's 1536x960 Guild Wars layout.
+    // Sequence:
+    // 1. Open main menu
+    // 2. Tap Log Out
+    // 3. Tap Character Select
 
+    performTap(242f, 52f) { first ->
+        if (!first) {
+            callback(false)
+            return@performTap
+        }
+
+        handler.postDelayed({
+            performTap(360f, 464f) { second ->
+                if (!second) {
+                    callback(false)
+                    return@performTap
+                }
+
+                handler.postDelayed({
+                    performTap(770f, 473f) { third ->
+                        callback(third)
+                    }
+                }, 250L)
+            }
+        }, 250L)
+    }
+}
+
+private fun performTap(
+    x: Float,
+    y: Float,
+    callback: (Boolean) -> Unit
+) {
+    val path = android.graphics.Path().apply {
+        moveTo(x, y)
+    }
+
+    val stroke =
+        android.accessibilityservice.GestureDescription.StrokeDescription(
+            path,
+            0,
+            50
+        )
+
+    val gesture =
+        android.accessibilityservice.GestureDescription.Builder()
+            .addStroke(stroke)
+            .build()
+
+    try {
+        dispatchGesture(
+            gesture,
+            object : GestureResultCallback() {
+                override fun onCompleted(
+                    gestureDescription: android.accessibilityservice.GestureDescription?
+                ) {
+                    callback(true)
+                }
+
+                override fun onCancelled(
+                    gestureDescription: android.accessibilityservice.GestureDescription?
+                ) {
+                    callback(false)
+                }
+            },
+            null
+        )
+    } catch (t: Throwable) {
+        Log.e(TAG, "Guild Wars tap failed at ($x,$y)", t)
+        callback(false)
+    }
+}
     override fun onServiceConnected() {
         super.onServiceConnected()
         connected = true
